@@ -1,4 +1,5 @@
 import { ApolloServer, gql } from "apollo-server";
+import fetch from 'node-fetch';
 
 let tweets = [
     {
@@ -38,11 +39,37 @@ const typeDefs = gql`
         allUsers: [User!]!
         allTweets: [Tweet!]!
         tweet(id:ID!): Tweet!
+        allMovies: [Movie!]!
+        movie(id:ID!):Movie!
     }
 
     type Mutation {
         postTweet(text:String!, userId: ID!): Tweet!
         deleteTweet(id: ID!): Boolean!
+    }
+
+    type Movie {
+        id: Int!
+        url: String!
+        imdb_code: String!
+        title: String!
+        title_english: String!
+        title_long: String!
+        slug: String!
+        year: Int!
+        rating: Float!
+        runtime: Float!
+        genres: [String!]!
+        summary: String
+        description_full: String!
+        synopsis: String!
+        yt_trailer_code: String!
+        language: String!
+        background_image: String!
+        background_image_original: String!
+        small_cover_imag: String!
+        medium_cover_image: String!
+        large_cover_image: String!
     }
 `
 
@@ -61,6 +88,16 @@ const resolvers = {
         },
         allUsers() {
             return users;
+        },
+        async allMovies() {
+            return await fetch("https://yts.mx/api/v2/list_movies.json")
+            .then(res => res.json())
+            .then(json => json.data.movies)
+        },
+        async movie(root, {id}) {
+            return await fetch(`https://yts.mx/api/v2/movie_details.json?movie_id=${id}`)
+            .then(res => res.json())
+            .then(json => json.data.movie)
         }
     },
     Mutation: {
@@ -79,9 +116,9 @@ const resolvers = {
             return true;
         }
     },
+    // type에는 존재하는데 변수에는 없는 것 처리
+    // 해당 필드의 값을 동적으로 계산
     User: {
-        // type에는 존재하는데 변수 내용에는 없는 것 처리
-        // 해당 필드의 값을 동적으로 계산
         fullName({firstName, lastName}) {
             return firstName + ' ' + lastName;
         }
